@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'yum_s3_sync'
+
+options = {}
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: yums3sync [options]"
+
+  opts.on("-s", "--source SOURCE", "HTTP source URL") do |s|
+    options[:source_base] = s
+  end
+  opts.on("-b", "--bucket BUCKET", "Target bucket name") do |b|
+    options[:target_bucket] = b
+  end
+  opts.on("-p", "--prefix PREFIX", "Target bucket prefix") do |p|
+    options[:target_base] = p
+  end
+end
+
+opt_parser.parse!
+
+if ! options[:source_base] || ! options[:target_bucket] || ! options[:target_base]
+  puts opt_parser
+  exit 1
+end
+
+repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base])
+repo_syncer.sync
