@@ -26,4 +26,10 @@ if ! options[:source_base] || ! options[:target_bucket] || ! options[:target_bas
 end
 
 repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base])
-repo_syncer.sync
+
+begin
+  repo_syncer.sync
+rescue StandardError => e
+  puts e.message
+  exit 1
+end

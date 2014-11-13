@@ -68,5 +68,10 @@ http.finish
 
 repositories.each do |repository|
   repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository)
-  repo_syncer.sync
+
+  begin
+    repo_syncer.sync
+  rescue StandardError => e
+    puts "Error syncing #{repository} skipping : #{e.message}"
+  end
 end
