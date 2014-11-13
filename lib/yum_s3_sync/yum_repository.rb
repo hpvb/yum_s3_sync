@@ -50,6 +50,10 @@ class YumRepository
 
     diff_packages
   end
+
+  def exists?
+    return @metadata['primary']
+  end
 end
 
 class PackageListener

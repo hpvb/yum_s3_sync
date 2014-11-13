@@ -25,11 +25,11 @@ class RepoSyncer
       metadata.push file
     end
 
-    unless new_packages.empty?
-      new_packages.each do |package|
-        s3_uploader.upload(package)
-      end
+    new_packages.each do |package|
+      s3_uploader.upload(package)
+    end
 
+    if ! dest_repository.exists? || ! new_packages.empty?
       metadata.each do |file|
         s3_uploader.upload(file)
       end

@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'yum_s3_sync'
+
+require 'net/http'
+require 'uri'
+require 'nokogiri'
+
+options = {}
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: yums3syncdir [options]"
+
+  opts.on("-s", "--source SOURCEDIR", "HTTP source base URL") do |s|
+    options[:source_base] = s
+  end
+
+  opts.on("-b", "--bucket BUCKET", "Target bucket name") do |b|
+    options[:target_bucket] = b
+  end
+
+  opts.on("-p", "--prefix PREFIX", "Target bucket prefix") do |p|
+    options[:target_base] = p
+  end
+end
+
+opt_parser.parse!
+
+if ! options[:source_base] || ! options[:target_bucket] || ! options[:target_base]
+  puts opt_parser
+  exit 1
+end
+
+def is_parent?(path)
+  return true if path.start_with?("/")
+  return true if path.include?("../")
+end
+
+uri = URI(options[:source_base])
+http = Net::HTTP.start(uri.host)
+
+repositories = []
+
+http.request_get(uri.path) {|response|
+  if response['content-type'].start_with?('text/html')
+    response.read_body do |html|
+      doc = Nokogiri::HTML(html)
+
+      doc.css('html a').each do |link|
+        link_uri = URI(link['href'])
+
+        next if link_uri.scheme && link_uri.host != uri.host
+        next if link_uri.query
+        next if is_parent?(link_uri.path)
+
+        repositories.push link_uri.path
+      end
+
+    end
+  end
+}
+http.finish
+
+repositories.each do |repository|
+  repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository)
+  repo_syncer.sync
+end
