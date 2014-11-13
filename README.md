@@ -15,7 +15,7 @@ After the syncronization you can use the repository using Yum with an S3 plugin 
 
 ## Installation
 
-Clone this git repository and build a Gem. The program should work without additional dependencies on RHEL/Centos 6 with EPEL enabled.
+Clone this git repository and build a Gem. The program should work without additional dependencies on RHEL/Centos 6 with EPEL enabled. It is tested on Ruby 1.8.7 and 2.1
 
 ## Usage
 
