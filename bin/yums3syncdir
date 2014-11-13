@@ -22,6 +22,10 @@ opt_parser = OptionParser.new do |opts|
   opts.on("-p", "--prefix PREFIX", "Target bucket prefix") do |p|
     options[:target_base] = p
   end
+
+  opts.on("-x", "--exclude prefix1,prefix2", Array, "Exclude prefixes") do |x|
+    options[:exclude] = x
+  end
 end
 
 opt_parser.parse!
@@ -52,6 +56,7 @@ http.request_get(uri.path) {|response|
         next if link_uri.scheme && link_uri.host != uri.host
         next if link_uri.query
         next if is_parent?(link_uri.path)
+        next if options[:exclude].any? { |pattern| link_uri.path.start_with?(pattern) }
 
         repositories.push link_uri.path
       end
