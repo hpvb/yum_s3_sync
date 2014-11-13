@@ -16,7 +16,7 @@ class YumRepository
     if repomd_file 
        REXML::Document.parse_stream(repomd_file, repomd_parser)
        @metadata = repomd_parser.metadata
-       @metadata['repomd'] = 'repodata/repomd.xml'
+       @metadata['repomd'] = { :href => 'repodata/repomd.xml' }
     else
        @metadata = { 'primary' => nil }
     end
@@ -25,7 +25,7 @@ class YumRepository
   def parse_packages
     return {} if ! @metadata['primary']
 
-    primary_file = @downloader.download(@metadata['primary'])
+    primary_file = @downloader.download(@metadata['primary'][:href])
     return {} if ! primary_file
 
     gzstream = Zlib::GzipReader.new(primary_file)
@@ -42,9 +42,11 @@ class YumRepository
   def compare(other)
     diff_packages = []
 
-    packages.each do |package, checksum| 
-      if other.packages[package] != checksum 
-        diff_packages.push package
+    if ! other.metadata['primary'] || metadata['primary'][:checksum] != other.metadata['primary'][:checksum]
+      packages.each do |package, checksum| 
+        if other.packages[package] != checksum 
+          diff_packages.push package
+        end
       end
     end
 
@@ -119,11 +121,18 @@ class RepModListener
     case name
     when 'data'
       if @data
-        self.metadata[@data['type']] = @data['location']
+        self.metadata[@data['type']] = { :href => @data['location'], :checksum => @data['checksum'] }
         @data = nil
       else
         fail "Unmatched <data> tag"
       end
+    end
+  end
+
+  def text(data)
+    return if data =~ /^\s+$/
+    if @current_tag == 'checksum'
+       @data['checksum'] = data
     end
   end
 end

@@ -22,7 +22,7 @@ class RepoSyncer
 
     metadata = []
     source_repository.metadata.each do |type, file|
-      metadata.push file
+      metadata.push file[:href]
     end
 
     new_packages.each do |package|
@@ -35,12 +35,14 @@ class RepoSyncer
       end
     end
 
-    s3_file_lister = YumS3Sync::S3FileLister.new(@target_bucket, @target_base)
-    s3_deleter = YumS3Sync::S3Deleter.new(@target_bucket, @target_base)
+    unless new_packages.empty?
+      s3_file_lister = YumS3Sync::S3FileLister.new(@target_bucket, @target_base)
+      s3_deleter = YumS3Sync::S3Deleter.new(@target_bucket, @target_base)
 
-    s3_file_lister.list.each do |file|
-      if ! source_repository.packages[file] && ! metadata.include?(file)
-        s3_deleter.delete(file)
+      s3_file_lister.list.each do |file|
+        if ! source_repository.packages[file] && ! metadata.include?(file)
+          s3_deleter.delete(file)
+        end
       end
     end
   end
