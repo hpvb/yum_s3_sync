@@ -4,10 +4,10 @@ Synchronize a Yum repository over HTTP to S3. This can be useful when you want t
 
 There are two command line tools supplied:
 
-yums3sync - Synchronizes a single Yum repository to a bucket:/prefix
+* ``yums3sync`` - Synchronizes a single Yum repository to a bucket:/prefix
+* ``yums3syncdir`` - Scan a directory of links for repositories then synchronize all of them to bucket:/prefix
 
-* ``yums3syncdir`` Scan a directory of links for repositories then synchronize all of them to bucket:/prefix
-* ``YumS3sync`` is smart enough to only copy files changes between runs, and does almost nothing if nothing changed on the source end. 
+YumS3sync is smart enough to only copy files changes between runs, and does almost nothing if nothing changed on the source end. 
 
 Syncdir is effectively a wrapper around sync to make it a little easier to synchronize a large amount of repositories without having to know exactly which ones you're synchronizing. I use it to synchronize internal Yum repositories made by other developers to AWS without having to make configuration changes.
 
