@@ -5,6 +5,7 @@ Synchronize a Yum repository over HTTP to S3. This can be useful when you want t
 There are two command line tools supplied:
 
 yums3sync - Synchronizes a single Yum repository to a bucket:/prefix
+
 yums3syncdir - Scan a directory of links for repositories then synchronize all of them to bucket:/prefix
 
 YumS3sync is smart enough to only copy files changes between runs, and does almost nothing if nothing changed on the source end. 
@@ -15,6 +16,12 @@ After the syncronization you can use the repository using Yum with an S3 plugin 
 
 ## Installation
 
+### Gem
+```
+gem install yum_s3_sync
+```
+
+### Manual
 Clone this git repository and build a Gem. The program should work without additional dependencies on RHEL/Centos 6 with EPEL enabled. It is tested on Ruby 1.8.7 and 2.1
 
 ## Usage
