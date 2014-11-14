@@ -51,7 +51,12 @@ http.request_get(uri.path) do|response|
       doc = Nokogiri::HTML(html)
 
       doc.css('html a').each do |link|
-        link_uri = URI(link['href'])
+        begin
+          link_uri = URI(link['href'])
+        rescue URI::InvalidURIError => e
+          puts "Invalid URI: #{link['href']} skipping"
+          next
+        end
 
         next if link_uri.scheme && link_uri.host != uri.host
         next if link_uri.query
