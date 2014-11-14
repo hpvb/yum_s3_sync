@@ -41,35 +41,40 @@ def parent?(path)
 end
 
 uri = URI(options[:source_base])
-http = Net::HTTP.start(uri.host)
 
 repositories = []
 
-http.request_get(uri.path) do|response|
-  if response['content-type'].start_with?('text/html')
-    response.read_body do |html|
-      doc = Nokogiri::HTML(html)
+Net::HTTP.start(uri.host) do |http|
+  http.request_get(uri.path) do|response|
+    unless response.code.start_with?('2')
+      puts "Unable to download index from #{uri} : #{response.message}"
+      exit 1
+    end
 
-      doc.css('html a').each do |link|
-        begin
-          link_uri = URI(link['href'])
-        rescue URI::InvalidURIError => e
-          puts "Invalid URI: #{link['href']} skipping"
-          next
+    if response['content-type'].start_with?('text/html')
+      response.read_body do |html|
+        doc = Nokogiri::HTML(html)
+
+        doc.css('html a').each do |link|
+          begin
+            link_uri = URI(link['href'])
+          rescue URI::InvalidURIError => e
+            puts "Invalid URI: #{link['href']} skipping"
+            next
+          end
+
+          next if link_uri.scheme && link_uri.host != uri.host
+          next if link_uri.query
+          next if parent?(link_uri.path)
+          next if options[:exclude].any? { |pattern| link_uri.path.start_with?(pattern) }
+
+          repositories.push link_uri.path
         end
 
-        next if link_uri.scheme && link_uri.host != uri.host
-        next if link_uri.query
-        next if parent?(link_uri.path)
-        next if options[:exclude].any? { |pattern| link_uri.path.start_with?(pattern) }
-
-        repositories.push link_uri.path
       end
-
     end
   end
 end
-http.finish
 
 repositories.each do |repository|
   repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository)
