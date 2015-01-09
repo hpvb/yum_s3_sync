@@ -26,7 +26,7 @@ module YumS3Sync
       end
 
       new_packages.each do |package|
-        s3_uploader.upload(package)
+        s3_uploader.upload(package, true)
       end
 
       if !dest_repository.exists? || !new_packages.empty?
