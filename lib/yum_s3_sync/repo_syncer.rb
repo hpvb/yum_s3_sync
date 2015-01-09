@@ -4,7 +4,7 @@ require 'yum_s3_sync'
 
 module YumS3Sync
   class RepoSyncer
-    def initialize(source_base, target_bucket, target_base)
+    def initialize(source_base, target_bucket, target_base, keep = false)
       @source_base = source_base
       @target_bucket = target_bucket
       @target_base = target_base
@@ -26,7 +26,7 @@ module YumS3Sync
       end
 
       new_packages.each do |package|
-        s3_uploader.upload(package, true)
+        s3_uploader.upload(package, keep)
       end
 
       if !dest_repository.exists? || !new_packages.empty?
