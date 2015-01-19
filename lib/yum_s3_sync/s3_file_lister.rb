@@ -14,12 +14,22 @@ module YumS3Sync
       puts "Listing all files in #{@bucket}:#{@prefix}"
       s3_objects = s3.buckets[@bucket].objects.with_prefix(@prefix)
 
-      Parallel.map(s3_objects, :in_threads => 50) do |file|
+      files = Parallel.map(s3_objects, :in_threads => 50) do |file|
         basename = file.key.sub(/#{@prefix}\/*/, '')
         size = file.content_length
 
         { :name => basename, :size => size }
       end
+
+      puts "Processing files"
+      filenames = []
+      filenames_sizes = []
+      files.each do |file|
+        filenames.push file[:name]
+        filenames_sizes.push "#{file[:name]}-#{file[:size]}"
+      end
+
+      return filenames, filenames_sizes
     end
   end
 end

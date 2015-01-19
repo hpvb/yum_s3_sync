@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'yum_s3_sync'
+require 'parallel'
 
 module YumS3Sync
   class RepoSyncer
@@ -41,18 +42,18 @@ module YumS3Sync
         end
       end
 
-      file_list = s3_file_lister.list
+      file_names, file_names_sizes = s3_file_lister.list
 
       puts "Locating removed files"
-      file_list.each do |file|
-        if !source_repository.packages[file[:name]] && !metadata.include?(file[:name])
-          s3_deleter.delete(file[:name])
+      file_names.each do |filename|
+        if !source_repository.packages[filename] && !metadata.include?(filename)
+          s3_deleter.delete(filename)
         end
       end
 
       puts "Locating missing files"
       source_repository.packages.each do |package, data|
-        unless file_list.any? { |f| f[:name] == package && f[:size] == data[:size] }
+        unless file_names_sizes.include? "#{package}-#{data[:size]}"
           s3_uploader.upload(package, true)
         end
       end
