@@ -4,11 +4,12 @@ require 'yum_s3_sync'
 
 module YumS3Sync
   class RepoSyncer
-    def initialize(source_base, target_bucket, target_base, keep = false)
+    def initialize(source_base, target_bucket, target_base, keep = false, dry_run = false)
       @source_base = source_base
       @target_bucket = target_bucket
       @target_base = target_base
       @keep = keep
+      @dry_run = dry_run
     end
 
     def sync
@@ -18,8 +19,12 @@ module YumS3Sync
       s3_downloader = YumS3Sync::S3Downloader.new(@target_bucket, @target_base)
       dest_repository = YumS3Sync::YumRepository.new(s3_downloader)
 
+      s3_uploader = YumS3Sync::S3Uploader.new(@target_bucket, @target_base, http_downloader, @dry_run)
+
+      s3_file_lister = YumS3Sync::S3FileLister.new(@target_bucket, @target_base)
+      s3_deleter = YumS3Sync::S3Deleter.new(@target_bucket, @target_base, @dry_run)
+
       new_packages = source_repository.compare(dest_repository)
-      s3_uploader = YumS3Sync::S3Uploader.new(@target_bucket, @target_base, http_downloader)
 
       metadata = []
       source_repository.metadata.each do |_type, file|
@@ -36,16 +41,22 @@ module YumS3Sync
         end
       end
 
-      unless new_packages.empty?
-        s3_file_lister = YumS3Sync::S3FileLister.new(@target_bucket, @target_base)
-        s3_deleter = YumS3Sync::S3Deleter.new(@target_bucket, @target_base)
+      file_list = s3_file_lister.list
 
-        s3_file_lister.list.each do |file|
-          if !source_repository.packages[file] && !metadata.include?(file)
-            s3_deleter.delete(file)
-          end
+      puts "Locating removed files"
+      file_list.each do |file|
+        if !source_repository.packages[file[:name]] && !metadata.include?(file[:name])
+          s3_deleter.delete(file[:name])
         end
       end
+
+      puts "Locating missing files"
+      source_repository.packages.each do |package, data|
+        unless file_list.any? { |f| f[:name] == package && f[:size] == data[:size] }
+          s3_uploader.upload(package, true)
+        end
+      end
+
     end
   end
 end

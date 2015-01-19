@@ -19,6 +19,9 @@ opt_parser = OptionParser.new do |opts|
   opts.on('-k', '--keep', 'Never overwrite exitant files') do |k|
     options[:keep] = true
   end
+  opts.on('-n', '--dry-run', 'Don\'t make any changes') do |n|
+    options[:dry_run] = true
+  end
 end
 
 opt_parser.parse!
@@ -28,7 +31,7 @@ if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   exit 1
 end
 
-repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options[:keep])
+repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options[:keep], options[:dry_run])
 
 begin
   repo_syncer.sync

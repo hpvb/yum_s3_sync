@@ -32,6 +32,8 @@ Usage: yums3sync [options]
     -s, --source SOURCE              HTTP source URL
     -b, --bucket BUCKET              Target bucket name
     -p, --prefix PREFIX              Target bucket prefix
+    -k, --keep                       Never overwrite exitant files
+    -n, --dry-run                    Don't make any changes
 ```
 
 Example usage:
@@ -50,6 +52,8 @@ Usage: yums3syncdir [options]
     -b, --bucket BUCKET              Target bucket name
     -p, --prefix PREFIX              Target bucket prefix
     -x, --exclude prefix1,prefix2    Exclude prefixes
+    -k, --keep                       Never overwrite exitant files
+    -n, --dry-run                    Don't make any changes
 ``` 
 
 Example usage:

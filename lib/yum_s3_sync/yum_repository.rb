@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'zlib'
+require 'nokogiri'
 require 'rexml/document'
 require 'rexml/streamlistener'
 
@@ -9,13 +10,19 @@ module YumS3Sync
     attr_accessor :metadata
 
     def initialize(downloader)
+      @metadata = {}
       @downloader = downloader
 
-      repomd_parser = RepModListener.new
       repomd_file = @downloader.download('repodata/repomd.xml')
       if repomd_file
-        REXML::Document.parse_stream(repomd_file, repomd_parser)
-        @metadata = repomd_parser.metadata
+        doc = Nokogiri::XML(repomd_file)
+        doc.xpath("//xmlns:data").each do |file|
+          metadata[file['type']] = {
+            :href => file.xpath('xmlns:location')[0]['href'],
+            :checksum => file.xpath('xmlns:checksum')[0].child.to_s
+          }
+        end
+
         @metadata['repomd'] = { :href => 'repodata/repomd.xml' }
       else
         @metadata = { 'primary' => nil }
@@ -28,11 +35,19 @@ module YumS3Sync
       primary_file = @downloader.download(@metadata['primary'][:href])
       return {} unless primary_file
 
+      puts "Parsing #{@metadata['primary'][:href]}"
       gzstream = Zlib::GzipReader.new(primary_file)
-      package_parser = PackageListener.new
 
-      REXML::Document.parse_stream(gzstream, package_parser)
-      package_parser.packages
+      doc = Nokogiri::XML(gzstream)
+      packages = {}
+      doc.xpath("//xmlns:package").each do |package|
+        packages[package.xpath("xmlns:location")[0]['href']] = { 
+          :checksum => package.xpath("xmlns:checksum")[0].child.to_s,
+          :size => package.xpath("xmlns:size")[0]['package'].to_i
+        }
+      end
+
+      packages
     end
 
     def packages
@@ -43,8 +58,8 @@ module YumS3Sync
       diff_packages = []
 
       if !other.metadata['primary'] || metadata['primary'][:checksum] != other.metadata['primary'][:checksum]
-        packages.each do |package, checksum|
-          if other.packages[package] != checksum
+        packages.each do |package, data|
+          if !other.packages[package] || other.packages[package][:checksum] != data[:checksum]
             diff_packages.push package
           end
         end
@@ -58,82 +73,4 @@ module YumS3Sync
     end
   end
 
-  class PackageListener
-    attr_accessor :packages
-    include REXML::StreamListener
-
-    def initialize
-      self.packages = {}
-    end
-
-    def tag_start(name, *attrs)
-      @current_tag = name
-      case name
-      when 'metadata'
-        puts "Parsing #{attrs[0]['packages']} packages"
-      when 'package'
-        @package = {}
-      when 'location'
-        @package['href'] = attrs[0]['href']
-      end
-    end
-
-    def tag_end(name)
-      case name
-      when 'package'
-        if @package
-          packages[@package['href']] = @package['checksum']
-          @package = nil
-        else
-          fail 'Unmatched <package> tag'
-        end
-      end
-    end
-
-    def text(data)
-      return if data =~ /^\s+$/
-      if @current_tag == 'checksum'
-        @package['checksum'] = data
-      end
-    end
-  end
-
-  class RepModListener
-    attr_accessor :metadata
-    include REXML::StreamListener
-
-    def initialize
-      self.metadata = {}
-    end
-
-    def tag_start(name, *attrs)
-      @current_tag = name
-      case name
-      when 'data'
-        @data = {}
-        @data['type'] = attrs[0]['type']
-      when 'location'
-        @data['location'] = attrs[0]['href']
-      end
-    end
-
-    def tag_end(name)
-      case name
-      when 'data'
-        if @data
-          metadata[@data['type']] = { :href => @data['location'], :checksum => @data['checksum'] }
-          @data = nil
-        else
-          fail 'Unmatched <data> tag'
-        end
-      end
-    end
-
-    def text(data)
-      return if data =~ /^\s+$/
-      if @current_tag == 'checksum'
-        @data['checksum'] = data
-      end
-    end
-  end
 end

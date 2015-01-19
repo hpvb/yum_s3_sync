@@ -2,9 +2,10 @@ require 'aws-sdk'
 
 module YumS3Sync
   class S3Deleter
-    def initialize(bucket, prefix)
+    def initialize(bucket, prefix, dry_run = false)
       @bucket = bucket
       @prefix = prefix
+      @dry_run = dry_run
     end
 
     def delete(file)
@@ -16,8 +17,12 @@ module YumS3Sync
       dest_obj = s3.buckets[@bucket].objects[target]
 
       if dest_obj.exists?
-        puts "Deleting #{@bucket}::#{target}"
-        dest_obj.delete
+        if @dry_run
+          puts "Dry-run: Deleting #{@bucket}::#{target}"
+        else
+          puts "Deleting #{@bucket}::#{target}"
+          dest_obj.delete
+        end
       end
     end
   end

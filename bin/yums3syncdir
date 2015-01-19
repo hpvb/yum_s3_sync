@@ -14,21 +14,20 @@ opt_parser = OptionParser.new do |opts|
   opts.on('-s', '--source SOURCEDIR', 'HTTP source base URL') do |s|
     options[:source_base] = s
   end
-
   opts.on('-b', '--bucket BUCKET', 'Target bucket name') do |b|
     options[:target_bucket] = b
   end
-
   opts.on('-p', '--prefix PREFIX', 'Target bucket prefix') do |p|
     options[:target_base] = p
   end
-
   opts.on('-x', '--exclude prefix1,prefix2', Array, 'Exclude prefixes') do |x|
     options[:exclude] = x
   end
-
   opts.on('-k', '--keep', 'Never overwrite exitant files') do |k|
     options[:keep] = true
+  end
+  opts.on('-n', '--dry-run', 'Don\'t make any changes') do |n|
+    options[:dry_run] = true
   end
 end
 
@@ -81,7 +80,7 @@ Net::HTTP.start(uri.host) do |http|
 end
 
 repositories.each do |repository|
-  repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository, options[:keep])
+  repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository + '/', options[:keep], options[:dry_run])
 
   begin
     repo_syncer.sync

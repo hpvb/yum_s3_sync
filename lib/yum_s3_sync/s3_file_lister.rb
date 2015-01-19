@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'parallel'
 
 module YumS3Sync
   class S3FileLister
@@ -8,16 +9,17 @@ module YumS3Sync
     end
 
     def list
-      files = []
-
       s3 = AWS::S3.new
-      s3.buckets[@bucket].objects.with_prefix(@prefix).each do |file|
+
+      puts "Listing all files in #{@bucket}:#{@prefix}"
+      s3_objects = s3.buckets[@bucket].objects.with_prefix(@prefix)
+
+      Parallel.map(s3_objects, :in_threads => 50) do |file|
         basename = file.key.sub(/#{@prefix}\/*/, '')
+        size = file.content_length
 
-        files.push basename
+        { :name => basename, :size => size }
       end
-
-      files
     end
   end
 end

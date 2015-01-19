@@ -2,10 +2,11 @@ require 'aws-sdk'
 
 module YumS3Sync
   class S3Uploader
-    def initialize(bucket, prefix, downloader)
+    def initialize(bucket, prefix, downloader, dry_run = false)
       @bucket = bucket
       @prefix = prefix
       @downloader = downloader
+      @dry_run = dry_run
     end
 
     def upload(file, overwrite = false)
@@ -22,11 +23,15 @@ module YumS3Sync
           return
         end
 
-        dest_obj.delete if dest_obj.exists?
         source_file = @downloader.download(file)
 
-        puts "Uploading #{@bucket}::#{target}"
-        dest_obj.write(:file => source_file)
+        if @dry_run 
+          puts "Dry-run: Uploading #{@bucket}::#{target}"
+        else
+          puts "Uploading #{@bucket}::#{target}"
+          dest_obj.delete if dest_obj.exists?
+          dest_obj.write(:file => source_file)
+        end
       rescue StandardError => e
         if retries < 10
           retries += 1
