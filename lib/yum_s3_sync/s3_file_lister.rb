@@ -14,7 +14,7 @@ module YumS3Sync
       puts "Listing all files in #{@bucket}:#{@prefix}"
       s3_objects = s3.buckets[@bucket].objects.with_prefix(@prefix)
 
-      files = Parallel.map(s3_objects, :in_threads => 50) do |file|
+      files = Parallel.map(s3_objects, :in_threads => 15) do |file|
         basename = file.key.sub(/#{@prefix}\/*/, '')
         size = file.content_length
 
