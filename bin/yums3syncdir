@@ -80,7 +80,7 @@ Net::HTTP.start(uri.host) do |http|
 end
 
 repositories.each do |repository|
-  repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository + '/', options[:keep], options[:dry_run])
+  repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base] + '/' + repository, options[:target_bucket], options[:target_base] + '/' + repository, options[:keep], options[:dry_run])
 
   begin
     repo_syncer.sync
