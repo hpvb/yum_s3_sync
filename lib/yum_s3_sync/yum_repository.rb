@@ -41,10 +41,7 @@ module YumS3Sync
       doc = Nokogiri::XML(gzstream)
       packages = {}
       doc.xpath("//xmlns:package").each do |package|
-        packages[package.xpath("xmlns:location")[0]['href']] = { 
-          :checksum => package.xpath("xmlns:checksum")[0].child.to_s,
-          :size => package.xpath("xmlns:size")[0]['package'].to_i
-        }
+        packages[package.xpath("xmlns:location")[0]['href']] = package.xpath("xmlns:checksum")[0].child.to_s
       end
 
       packages
@@ -58,8 +55,8 @@ module YumS3Sync
       diff_packages = []
 
       if !other.metadata['primary'] || metadata['primary'][:checksum] != other.metadata['primary'][:checksum]
-        packages.each do |package, data|
-          if !other.packages[package] || other.packages[package][:checksum] != data[:checksum]
+        packages.each do |package, checksum|
+          if other.packages[package] = checksum
             diff_packages.push package
           end
         end

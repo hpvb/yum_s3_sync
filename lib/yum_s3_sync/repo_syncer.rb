@@ -42,7 +42,7 @@ module YumS3Sync
         end
       end
 
-      file_names, file_names_sizes = s3_file_lister.list
+      file_names = s3_file_lister.list
 
       puts "Locating removed files"
       file_names.each do |filename|
@@ -53,7 +53,7 @@ module YumS3Sync
 
       puts "Locating missing files"
       source_repository.packages.each do |package, data|
-        unless file_names_sizes.include? "#{package}-#{data[:size]}"
+        unless file_names.include? package
           s3_uploader.upload(package, true)
         end
       end
