@@ -56,7 +56,7 @@ module YumS3Sync
 
       if !other.metadata['primary'] || metadata['primary'][:checksum] != other.metadata['primary'][:checksum]
         packages.each do |package, checksum|
-          if other.packages[package] = checksum
+          if other.packages[package] != checksum
             diff_packages.push package
           end
         end
