@@ -28,7 +28,12 @@ module YumS3Sync
       new_packages = source_repository.compare(dest_repository)
 
       metadata = []
-      source_repository.metadata.each do |_type, file|
+      new_metadata = false
+      source_repository.metadata.each do |type, file|
+        if !dest_repository.metadata[type] || dest_repository.metadata[type][:checksum] != file[:checksum]
+          new_metadata = true
+        end
+          
         metadata.push file[:href]
       end
 
@@ -36,7 +41,7 @@ module YumS3Sync
         s3_uploader.upload(package, @keep)
       end
 
-      if !dest_repository.exists? || !new_packages.empty?
+      if !dest_repository.exists? || !new_packages.empty? || new_metadata
         metadata.each do |file|
           s3_uploader.upload(file, true)
         end
