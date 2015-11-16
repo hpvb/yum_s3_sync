@@ -1,4 +1,5 @@
 require 'open-uri'
+require 'socket'
 
 module YumS3Sync
   class HTTPDownloader
