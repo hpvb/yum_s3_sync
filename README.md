@@ -29,11 +29,19 @@ Clone this git repository and build a Gem. The program should work without addit
 
 ```
 Usage: yums3sync [options]
-    -s, --source SOURCE              HTTP source URL
-    -b, --bucket BUCKET              Target bucket name
+
+Specific options:
+    -s, --source [SOURCE]            HTTP source URL
+    -b, --bucket [BUCKET]            Target bucket name
     -p, --prefix PREFIX              Target bucket prefix
     -k, --keep                       Never overwrite exitant files
     -n, --dry-run                    Don't make any changes
+
+Authentication options:
+    -a, --authentication             Allow authentication method to http(s)
+        --username [USERNAME]        Username to use in the http(s)
+        --password [PASSWORD]        Password to use in the https
+    -d, --disable                    Disable SSL to check http(s)
 ```
 
 Example usage:
