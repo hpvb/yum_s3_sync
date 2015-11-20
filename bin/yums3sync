@@ -3,14 +3,17 @@
 require 'optparse'
 require 'yum_s3_sync'
 
+
 options = {}
 opt_parser = OptionParser.new do |opts|
   opts.banner = 'Usage: yums3sync [options]'
+  opts.separator ""
+  opts.separator "Specific options:"
 
-  opts.on('-s', '--source SOURCE', 'HTTP source URL') do |s|
+  opts.on('-s', '--source [SOURCE]', 'HTTP source URL') do |s|
     options[:source_base] = s
   end
-  opts.on('-b', '--bucket BUCKET', 'Target bucket name') do |b|
+  opts.on('-b', '--bucket [BUCKET]', 'Target bucket name') do |b|
     options[:target_bucket] = b
   end
   opts.on('-p', '--prefix PREFIX', 'Target bucket prefix') do |p|
@@ -22,6 +25,23 @@ opt_parser = OptionParser.new do |opts|
   opts.on('-n', '--dry-run', 'Don\'t make any changes') do |n|
     options[:dry_run] = true
   end
+  opts.separator ""
+  opts.separator "Authentication options:"
+  options[:authentication] = false
+  opts.on('-a', '--authentication', 'Allow authentication method to http(s)') do |a|
+    options[:authentication] = true
+  end
+
+  opts.on('--username [USERNAME]', 'Username to use in the http(s)') do |u|
+    options[:username] = u
+  end
+
+  opts.on('--password [PASSWORD]', 'Password to use in the https') do |pa|
+    options[:password] = pa
+  end
+  opts.on('-d', '--disable', 'Disable SSL to check http(s)') do |a|
+    options[:ssl] = true
+  end
 end
 
 opt_parser.parse!
@@ -31,7 +51,13 @@ if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   exit 1
 end
 
-repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options[:keep], options[:dry_run])
+if options[:authentication] and (!options[:username] || !options[:password])
+  puts options[:authentication]
+  puts opt_parser
+  exit 1
+end
+
+repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options)
 
 begin
   repo_syncer.sync
