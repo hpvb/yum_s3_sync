@@ -61,11 +61,7 @@ if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   exit 1
 end
 
-puts "AUTHENTICATION: #{options[:authentication]}"
-puts !(!options[:username] and !options[:password])
-
 if options[:authentication] || (options[:username] and options[:password])
-  puts "ERROR ???????"
   puts opt_parser
   exit 1
 end
