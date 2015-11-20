@@ -44,7 +44,12 @@ opt_parser = OptionParser.new do |opts|
   end
 end
 
-opt_parser.parse!
+begin opt_parser.parse!
+rescue OptionParser::InvalidOption => e
+  puts e
+  puts opt_parser
+  exit 1
+end
 
 if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   puts opt_parser
@@ -56,6 +61,8 @@ if options[:authentication] and (!options[:username] || !options[:password])
   puts opt_parser
   exit 1
 end
+
+
 
 repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options)
 
