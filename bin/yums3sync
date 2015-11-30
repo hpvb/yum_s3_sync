@@ -66,6 +66,9 @@ if options[:authentication]
     puts opt_parser
     exit 1
   end
+else
+  options.delete(:username)
+  options.delete(:password)
 end
 
 repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options)
