@@ -61,9 +61,13 @@ if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   exit 1
 end
 
-if options[:authentication] || (options[:username] and options[:password])
-  puts opt_parser
-  exit 1
+puts options
+
+if options[:authentication] 
+  if (options[:username].empty? or options[:password].empty?)
+    puts opt_parser
+    exit 1
+  end
 end
 
 repo_syncer = YumS3Sync::RepoSyncer.new(options[:source_base], options[:target_bucket], options[:target_base], options)
