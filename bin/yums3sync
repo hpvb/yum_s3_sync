@@ -61,8 +61,6 @@ if !options[:source_base] || !options[:target_bucket] || !options[:target_base]
   exit 1
 end
 
-puts options
-
 if options[:authentication] 
   if (options[:username].empty? or options[:password].empty?)
     puts opt_parser
