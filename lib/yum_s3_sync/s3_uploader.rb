@@ -2,35 +2,39 @@ require 'aws-sdk'
 
 module YumS3Sync
   class S3Uploader
-    def initialize(bucket, prefix, downloader, dry_run = false)
+    def initialize(bucket, prefix, dry_run = false)
       @bucket = bucket
       @prefix = prefix
-      @downloader = downloader
       @dry_run = dry_run
+      @s3 = AWS::S3.new
     end
 
-    def upload(file, overwrite = false)
-      retries = 0
-      s3 = AWS::S3.new
-
-      begin
-        target = "#{@prefix}/#{file}"
+    def file_exists?(source_url)
+        target = "#{@prefix}/#{source_url}"
         target.gsub!(/\/+/, '/')
-        dest_obj = s3.buckets[@bucket].objects[target]
+        dest_obj = @s3.buckets[@bucket].objects[target]
 
-        if dest_obj.exists? && ! overwrite
-          puts "Already exists: skipping #{@bucket}::#{target}" 
-          return
+        if dest_obj.exists? 
+          return true
         end
 
-        source_file = @downloader.download(file)
+        return false
+    end
+
+    def upload(source_url, file)
+      retries = 0
+
+      begin
+        target = "#{@prefix}/#{source_url}"
+        target.gsub!(/\/+/, '/')
+        dest_obj = @s3.buckets[@bucket].objects[target]
 
         if @dry_run 
           puts "Dry-run: Uploading #{@bucket}::#{target}"
         else
           puts "Uploading #{@bucket}::#{target}"
           dest_obj.delete if dest_obj.exists?
-          dest_obj.write(:file => source_file)
+          dest_obj.write(:file => file)
         end
       rescue StandardError => e
         if retries < 10

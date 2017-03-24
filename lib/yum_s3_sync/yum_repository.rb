@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'zlib'
+require 'stringio'
 require 'nokogiri'
 require 'rexml/document'
 require 'rexml/streamlistener'
@@ -15,15 +16,23 @@ module YumS3Sync
 
       repomd_file = @downloader.download('repodata/repomd.xml')
       if repomd_file
-        doc = Nokogiri::XML(repomd_file)
+        repomd = StringIO.new(repomd_file.read())
+
+        doc = Nokogiri::XML(repomd)
         doc.xpath("//xmlns:data").each do |file|
-          metadata[file['type']] = {
-            :href => file.xpath('xmlns:location')[0]['href'],
-            :checksum => file.xpath('xmlns:checksum')[0].child.to_s
-          }
+          href = file.xpath('xmlns:location')[0]['href']
+          f = @downloader.download(href)
+          if f
+            metadata[file['type']] = {
+              :href => href,
+              :checksum => file.xpath('xmlns:checksum')[0].child.to_s,
+              :file => StringIO.new(f.read())
+            }
+          end
         end
 
-        @metadata['repomd'] = { :href => 'repodata/repomd.xml' }
+        repomd.rewind()
+        @metadata['repomd'] = { :href => 'repodata/repomd.xml', :file => repomd }
       else
         @metadata = { 'primary' => nil }
       end
@@ -32,11 +41,8 @@ module YumS3Sync
     def parse_packages
       return {} unless @metadata['primary']
 
-      primary_file = @downloader.download(@metadata['primary'][:href])
-      return {} unless primary_file
-
       puts "Parsing #{@metadata['primary'][:href]}"
-      gzstream = Zlib::GzipReader.new(primary_file)
+      gzstream = Zlib::GzipReader.new(@metadata['primary'][:file])
 
       doc = Nokogiri::XML(gzstream)
       packages = {}
@@ -44,6 +50,7 @@ module YumS3Sync
         packages[package.xpath("xmlns:location")[0]['href']] = package.xpath("xmlns:checksum")[0].child.to_s
       end
 
+      @metadata['primary'][:file].rewind()
       packages
     end
 
