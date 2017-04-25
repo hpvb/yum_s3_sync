@@ -13,14 +13,13 @@ Gem::Specification.new do |spec|
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   spec.require_paths = ['lib']
 
   spec.add_development_dependency 'bundler', '~> 1.7'
   spec.add_development_dependency 'rake', '~> 10.0'
 
-  spec.add_dependency 'nokogiri', '>= 1.4.3'
-  spec.add_dependency 'parallel'
-  spec.add_dependency 'aws-sdk'
+  spec.add_runtime_dependency(%q<nokogiri>, [">= 1.4.3"])
+  spec.add_runtime_dependency(%q<parallel>, [">= 1.6.1"])
+  spec.add_runtime_dependency(%q<aws-sdk-v1>, [">= 0"])
 end

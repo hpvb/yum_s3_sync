@@ -3,18 +3,39 @@
 require 'yum_s3_sync'
 require 'parallel'
 
+
 module YumS3Sync
   class RepoSyncer
-    def initialize(source_base, target_bucket, target_base, keep = false, dry_run = false)
+    def initialize(source_base, target_bucket, target_base, options)
       @source_base = source_base
       @target_bucket = target_bucket
       @target_base = target_base
-      @keep = keep
-      @dry_run = dry_run
+      @keep = options[:keep]
+      @dry_run = options[:dry_run]
+      if options[:ssl] == true
+        options[:ssl_verify_mode] = OpenSSL::SSL::VERIFY_NONE
+        options.delete(:ssl)
+      end
+
+      if options[:authentication] == true
+        options[:http_basic_authentication] = [options[:username], options[:password]]
+        options.delete(:username)
+        options.delete(:password)
+        options.delete(:authentication)
+      end
+      if options[:authentication] == false
+        options.delete(:authentication)
+      end
+      options.delete(:keep)
+      options.delete(:dry_run)
+      options.delete(:source_base)
+      options.delete(:target_bucket)
+      options.delete(:target_base)
+      @options = options
     end
 
     def sync
-      http_downloader = YumS3Sync::HTTPDownloader.new(@source_base)
+      http_downloader = YumS3Sync::HTTPDownloader.new(@source_base, @options)
       source_repository = YumS3Sync::YumRepository.new(http_downloader)
 
       s3_downloader = YumS3Sync::S3Downloader.new(@target_bucket, @target_base)
